@@ -9,7 +9,7 @@
       "metadata": {
         "description": "Naming prefix for the new storage account to be created. 18-char max, lowercase alphanumeric"
       },
-      "defaultValue": "xxxsql"
+      "defaultValue": "xxxsqldr"
     },
 
     "storageAccountType": {
@@ -32,7 +32,7 @@
       "metadata": {
         "description": "Naming prefix for the new VM name. 8-char max, lowercase alphanumeric"
       },
-      "defaultValue": "xxxsql"
+      "defaultValue": "xxxsqldr"
     },
 
     "sqlVMSize": {
