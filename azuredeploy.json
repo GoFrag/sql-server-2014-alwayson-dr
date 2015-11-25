@@ -192,7 +192,7 @@
     "sqlStorageName": "[concat(parameters('newStorageAccountNamePrefix'),'sqlsa0')]",
     "sqlClusterTemplateURL": "[concat(parameters('assetLocation'),'/SqlClusterVmTemplate.json')]",
     "deploySqlClusterVm": "deploySqlClusterVm",
-    "deploySqlClusterVmsId": "[concat('Microsoft.Resources/deployments/', variables('deploySqlClusterVm'))]",
+    "deploySqlClusterVmId": "[concat('Microsoft.Resources/deployments/', variables('deploySqlClusterVm'))]",
 	
 	"sqlClusterVmNamePrefix": "[concat(parameters('vmNamePrefix'),'-SqlC-')]",
     "sqlCVMName1": "[concat(variables('sqlClusterVmNamePrefix'),'0')]",
