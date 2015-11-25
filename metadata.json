@@ -1,0 +1,7 @@
+{
+  "itemDisplayName": "Extend existing SQL Server 2014 AlwaysOn AG for Disaster Recovery",
+  "description": "This template deploys an additional SQL Server 2014 AlwaysOn AG cluster node to an existing SQL Server AlwaysOn AG cluster in a remote Azure datacenter region for Disaster Recovery.  This additonal node can be leveraged for hosting Async Replicas of databases in an existing AlwaysOn Availability Group.",
+  "summary": "Deploys an additional remote SQL Server 2014 AlwaysOn AG cluster node to an existing cluster for Disaster Recovery",
+  "githubUsername": "robotechredmond",
+  "dateUpdated": "2015-11-25"
+}

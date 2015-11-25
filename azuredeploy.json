@@ -1,0 +1,304 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+
+    "newStorageAccountNamePrefix": {
+      "type": "string",
+      "maxLength": 18,
+      "metadata": {
+        "description": "Naming prefix for the new storage account to be created. 18-char max, lowercase alphanumeric"
+      },
+      "defaultValue": "xxxsql"
+    },
+
+    "storageAccountType": {
+      "type": "string",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_GRS",
+        "Standard_RAGRS",
+        "Premium_LRS"
+      ],
+      "metadata": {
+        "description": "Type of new Storage Account (Standard_LRS, Standard_GRS, Standard_RAGRS or Premium_LRS) to be created to store VM disks"
+      },
+      "defaultValue": "Premium_LRS"
+    },
+
+    "vmNamePrefix": {
+      "type": "string",
+      "maxLength": 8,
+      "metadata": {
+        "description": "Naming prefix for the new VM name. 8-char max, lowercase alphanumeric"
+      },
+      "defaultValue": "xxxsql"
+    },
+
+    "sqlVMSize": {
+      "type": "string",
+      "allowedValues": [
+        "Standard_D1",
+        "Standard_DS1",
+        "Standard_D2",
+        "Standard_DS2",
+        "Standard_D3",
+        "Standard_DS3",
+        "Standard_D4",
+        "Standard_DS4",
+        "Standard_D11",
+        "Standard_DS11",
+        "Standard_D12",
+        "Standard_DS12",
+        "Standard_D13",
+        "Standard_DS13",
+        "Standard_D14",
+        "Standard_DS14"
+      ],
+      "metadata": {
+        "description": "Size of the SQL VM instance to be created"
+      },
+      "defaultValue": "Standard_DS3"
+    },
+
+    "sqlServerServiceAccountUserName": {
+      "type": "string",
+      "metadata": {
+        "description": "Existing service account name for SQL Server services"
+      },
+      "defaultValue": "sqlservice"
+    },
+
+    "sqlServerServiceAccountPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Service account password for SQL Server services"
+      }
+    },
+
+    "virtualNetworkId": {
+      "type": "string",
+      "metadata": {
+        "description": "Resource ID of the existing VNET. You can find the Resource ID for the VNET on the Properties blade of the VNET."
+      }
+    },
+
+    "sqlSubnetName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the existing subnet in the existing VNET to which the SQL VM should be deployed"
+      },
+      "defaultValue": "default"
+    },
+
+    "domainName": {
+      "type": "string",
+      "metadata": {
+        "description": "DNS domain name for existing Active Directory domain"
+      },
+      "defaultValue": "contoso.com"
+    },
+
+    "adDCVMName": {
+      "type": "string",
+      "maxLength": 15,
+      "metadata": {
+        "description": "Computer name of the closest AD domain controller & DNS server"
+      }
+    },
+
+    "adIpAddress1": {
+      "type": "string",
+      "metadata": {
+        "description": "IP address of the closest AD domain controller & DNS server"
+      },
+      "defaultValue": "10.2.0.4"
+    },
+
+    "adIpAddress2": {
+      "type": "string",
+      "metadata": {
+        "description": "IP address of an existing secondary AD domain controller & DNS server"
+      },
+      "defaultValue": "10.2.0.5"
+    },
+
+    "lbIPAddress": {
+      "type": "string",
+      "metadata": {
+        "description": "IP address of ILB for the new SQL Server AlwaysOn listener to be created"
+      },
+      "defaultValue": "10.2.0.10"
+    },
+
+    "clusterName": {
+      "type": "string",
+      "metadata": {
+        "description": "Cluster name of existing SQL Server AlwaysOn AG cluster"
+      },
+      "defaultValue": "xxxsql-fc"
+    },
+
+    "adminUsername": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of an existing Admin user account for the Active Directory domain"
+      },
+      "defaultValue": "AzureAdmin"
+    },
+
+    "adminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Password for the existing Admin user account for the Active Directory domain"
+      }
+    },
+
+    "location": {
+      "type": "string",
+      "allowedValues": [
+        "West US",
+        "East US",
+        "East US 2",
+        "Central US",
+        "South Central US",
+        "North Central US",
+        "North Europe",
+        "West Europe",
+        "East Asia",
+        "Southeast Asia",
+        "Japan East",
+        "Japan West"
+      ],
+      "metadata": {
+        "description": "Region in which to deploy the new resources"
+      }
+    },
+
+    "assetLocation": {
+      "type": "string",
+      "metadata": {
+        "description": "Location of resources upon which this template is dependent, such as nested templates and DSC modules"
+      },
+      "defaultValue": "https://raw.githubusercontent.com/robotechredmond/sql-server-2014-alwayson-dr/master"
+    }
+
+  },
+
+  "variables": {
+
+    "sqlSubnetRef": "[concat(parameters('virtualNetworkId'),'/subnets/',parameters('sqlSubnetName'))]",
+
+    "sqlStorageName": "[concat(parameters('newStorageAccountNamePrefix'),'sqlsa0')]",
+    "sqlClusterTemplateURL": "[concat(parameters('assetLocation'),'/SqlClusterVmTemplate.json')]",
+    "deploySqlClusterVm": "deploySqlClusterVm",
+    "deploySqlClusterVmsId": "[concat('Microsoft.Resources/deployments/', variables('deploySqlClusterVm'))]",
+	
+	"sqlClusterVmNamePrefix": "[concat(parameters('vmNamePrefix'),'-SqlC-')]",
+    "sqlCVMName1": "[concat(variables('sqlClusterVmNamePrefix'),'0')]",
+	"sqlNicName1": "[concat(variables('sqlCVMName1'),'-nic0')]",
+
+    "nicTemplateURL": "[concat(parameters('assetLocation'),'/nic.json')]",
+    "updateSQLCNic1": "updateSQLCNic1",
+    "updateSQLCNic1Id": "[concat('Microsoft.Resources/deployments/', variables('updateSQLCNic1'))]",
+
+
+    "lbName": "[concat(parameters('vmNamePrefix'),'-lb')]",
+    "lbFE": "[concat(variables('lbName'),'-fe')]",
+    "lbBE": "[concat(variables('lbName'),'-be')]",
+    "sqllbID":"[resourceId('Microsoft.Network/loadBalancers',variables('lbName'))]",
+    "sqllbFEConfigID": "[concat(variables('sqllbID'),'/frontendIPConfigurations/',variables('lbFE'))]",
+    "sqlBEAddressPoolID": "[concat(variables('sqllbID'),'/backendAddressPools/',variables('lbBE'))]",
+
+    "deploySqlAlwaysOn": "deploySqlAlwaysOn",
+    "deploySqlAlwaysOnTemplateUrl": "[concat(parameters('assetLocation'),'/DeploySqlAlwaysOn.json')]",
+
+    "sqlAOEPName": "[concat(parameters('vmNamePrefix'),'-hadr')]",
+    "sqlAOListenerName": "[concat(parameters('vmNamePrefix'),'ag-listener')]",
+
+  },
+
+  "resources": [
+
+    {
+      "name": "[variables('deploySqlClusterVm')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('sqlClusterTemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "location": { "value": "[parameters('location')]" },
+          "adminUsername": { "value": "[parameters('adminUsername')]" },
+          "adminPassword": { "value": "[parameters('adminPassword')]" },
+          "storageAccount": { "value": "[variables('sqlStorageName')]" },
+          "storageAccountType": { "value": "[parameters('storageAccountType')]" },
+		  "nicName": { "value": "[variables('sqlNicName1')]" },
+          "nicSubnetUri": { "value": "[variables('sqlSubnetRef')]" },
+          "lbSubnetUri": { "value": "[variables('sqlSubnetRef')]" },
+          "vmName": { "value": "[variables('sqlCVMName1')]" },
+          "lbIPAddress": { "value": "[parameters('lbIPAddress')]" },
+		  "lbName": { "value": "[variables('lbName')]" },
+		  "lbFE" : { "value": "[variables('lbFE')]" },
+		  "lbBE" : { "value": "[variables('lbBE')]" },
+		  "sqlAOListenerName": { "value": "[variables('sqlAOListenerName')]" },
+          "vmSize": { "value": "[parameters('sqlVMSize')]" }
+        }
+      }
+    },
+
+    {
+      "name": "[variables('updateSQLCNic1')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[variables('deploySqlClusterVmId')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('nicTemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "nicName": {
+            "value": "[variables('sqlNicName1')]"
+          },
+          "ipConfigurations": {
+            "value": [
+              {
+                "name": "ipconfig1",
+                "properties": {
+                  "privateIPAllocationMethod": "Dynamic",
+                  "subnet": {
+                    "id": "[variables('sqlSubnetRef')]"
+                  },
+                "loadBalancerBackendAddressPools": [
+                  {
+                    "id":"[variables('sqlBEAddressPoolID')]"
+                  }
+		 ]
+                }
+              }
+            ]
+          },
+          "dnsServers": {
+            "value": [ "[parameters('adIpAddress1')]", "[parameters('adIpAddress2')]" ]
+          }
+
+        }
+      }
+    }
+
+  ],
+
+  "outputs": {
+  }
+
+}

@@ -1,0 +1,377 @@
+﻿{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "vmName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the VM to be created"
+      },
+      "defaultValue": "xxxsql-SqlC-0"
+    },
+
+    "windowsImagePublisher": {
+      "type": "string",
+      "metadata": {
+        "description": "The Publisher of Windows Image"
+      },
+      "defaultValue": "MicrosoftSQLServer"
+    },
+    "windowsImageOffer": {
+      "type": "string",
+      "metadata": {
+        "description": "The offer of Windows Image"
+      },
+      "defaultValue": "SQL2014-WS2012R2"
+    },
+    "windowsImageSKU": {
+      "type": "string",
+      "metadata": {
+        "description": "The SKU Name of Windows Image"
+      },
+      "defaultValue": "Enterprise"
+    },
+
+    "windowsImageVersion": {
+      "type": "string",
+      "metadata": {
+        "description": "The Version of Windows Image"
+      },
+      "defaultValue": "latest"
+    },
+
+    "storageAccount": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the new storage account in which VM disks will be stored"
+      },
+	  "defaultValue": "xxxsql-sqlsa0"
+    },
+
+    "storageAccountType": {
+      "type": "string",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_GRS",
+        "Standard_RAGRS",
+        "Premium_LRS"
+      ],
+      "metadata": {
+        "description": "The type of the Storage Account created"
+      },
+      "defaultValue": "Premium_LRS"
+    },
+	
+    "adminUsername": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the Administrator of the VMs and AD domain"
+      },
+      "defaultValue": "AzureAdmin"
+    },
+	
+    "adminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The password for the Administrator account of the VMs and AD domain"
+      }
+    },
+
+    "location": {
+      "type": "string",
+      "allowedValues": [
+        "West US",
+        "East US",
+        "East US 2",
+        "Central US",
+        "South Central US",
+        "North Central US",
+        "North Europe",
+        "West Europe",
+        "East Asia",
+        "Southeast Asia",
+        "Japan East",
+        "Japan West",
+        "Southeast Asia"
+      ],
+      "metadata": {
+        "description": "The region in which to deploy new resources"
+      }
+    },
+
+    "vmSize": {
+      "type": "string",
+      "allowedValues": [
+        "Standard_D1",
+        "Standard_DS1",
+        "Standard_D2",
+        "Standard_DS2",
+        "Standard_D3",
+        "Standard_DS3",
+        "Standard_D4",
+        "Standard_DS4",
+        "Standard_D11",
+        "Standard_DS11",
+        "Standard_D12",
+        "Standard_DS12",
+        "Standard_D13",
+        "Standard_DS13",
+        "Standard_D14",
+        "Standard_DS14"
+      ],
+      "metadata": {
+        "description": "The size of the SQL VM to be created"
+      },
+      "defaultValue": "Standard_DS3"
+    },
+	
+    "nicSubnetUri": {
+      "type": "string",
+      "metadata": {
+        "description": "Reference to the subnet of nics"
+      }
+    },
+
+    "lbSubnetUri": {
+      "type": "string",
+      "metadata": {
+        "description": "Reference to the subnet for load balancer"
+      }
+    },
+
+    "sqlDiskSize": {
+      "type": "int",
+      "metadata": {
+        "description": "Disk size for SQL disks"
+      },
+      "defaultValue": 1000
+    },
+
+    "lbIPAddress": {
+      "type": "string",
+      "metadata": {
+        "description": "The address of SQL internal load balancer"
+      },
+      "defaultValue" : "10.2.0.10"
+    },
+	
+	"lbName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the SQL internal load balancer"
+      },
+      "defaultValue" : "xxxsql-lb"
+    },
+	
+	"lbFE": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the SQL internal load balancer front-end pool"
+      },
+      "defaultValue" : "xxxsql-lb-fe"
+    },
+	
+	"lbBE": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the SQL internal load balancer back-end pool"
+      },
+      "defaultValue" : "xxxsql-lb-be"
+    },
+	
+	"sqlAOListenerName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the SQL AlwaysOn listener"
+      },
+      "defaultValue" : "xxxsqlag-listener"
+    },
+	
+	"nicName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the VM NIC to be created"
+      },
+      "defaultValue" : "xxxsql-SqlC-0-nic0"
+    }
+	
+  },
+  
+  "variables": {
+    "vmContainerName": "vhds",
+    "sqllbID":"[resourceId('Microsoft.Network/loadBalancers',parameters('lbName'))]",
+    "sqllbFEConfigID": "[concat(variables('sqllbID'),'/frontendIPConfigurations/',parameters('lbFE'))]",
+    "sqlBEAddressPoolID": "[concat(variables('sqllbID'),'/backendAddressPools/',parameters('lbBE'))]",
+    "sqlAOProbe": "[concat(parameters('lbName'),'-probe')]",
+    "sqllbProbeID": "[concat(variables('sqllbID'),'/probes/',variables('sqlAOProbe'))]"
+  },
+  
+  "resources": [
+  
+    {
+		"type": "Microsoft.Storage/storageAccounts",
+		"name": "[parameters('storageAccount')]",
+		"apiVersion": "2015-05-01-preview",
+		"location": "[parameters('location')]",
+		"properties": {
+			"accountType": "[parameters('storageAccountType')]"
+		}
+	},
+	
+    {
+		"apiVersion": "2015-05-01-preview",
+		"name": "[parameters('lbName')]",
+		"type": "Microsoft.Network/loadBalancers",
+		"location": "[parameters('location')]",
+		"properties": {
+			"frontendIPConfigurations": [
+			{
+				"name": "[parameters('lbFE')]",
+				"properties": {
+					"privateIPAllocationMethod": "Static",
+					"privateIPAddress" :"[parameters('lbIPAddress')]",
+					"subnet": {
+						"id": "[parameters('lbSubnetUri')]"
+					}
+				}
+			}
+			],
+			"backendAddressPools": [
+			{
+				"name": "[parameters('lbBE')]"
+			}
+			],
+			"loadBalancingRules": [
+			{
+				"name": "[parameters('sqlAOListenerName')]",
+				"properties": {
+					"frontendIPConfiguration": {
+						"id": "[variables('sqllbFEConfigID')]"
+					},
+					"backendAddressPool": {
+						"id": "[variables('sqlBEAddressPoolID')]"
+					},
+					"probe": {
+						"id": "[variables('sqllbProbeID')]"
+					},
+					"protocol": "tcp",
+					"frontendPort": 1433,
+					"backendPort": 1433,
+					"enableFloatingIP": true
+				}
+			}
+			],
+			"probes": [
+			{
+				"name": "[variables('sqlAOProbe')]",
+				"properties": {
+					"protocol": "tcp",
+					"port": 59999,
+					"intervalInSeconds": "5",
+					"numberOfProbes": "2"
+				}
+			}
+			]
+		}
+	},
+
+    {
+		"name": "[parameters('nicName')]",
+		"type": "Microsoft.Network/networkInterfaces",
+		"location": "[parameters('location')]",
+		"apiVersion": "2015-05-01-preview",
+		"dependsOn": [
+			"[concat('Microsoft.Network/loadBalancers/',parameters('lbName'))]"
+		],
+		"properties": {
+			"ipConfigurations": [
+			{
+				"name": "ipconfig1",
+				"properties": {
+					"privateIPAllocationMethod": "Dynamic",
+					"subnet": {
+						"id": "[parameters('nicSubnetUri')]"
+					},
+					"loadBalancerBackendAddressPools": [
+						{
+							"id":"[variables('sqlBEAddressPoolID')]"
+						}
+					]
+				}
+			}
+			]
+		}
+	},
+	
+    {
+		"apiVersion": "2015-05-01-preview",
+		"type": "Microsoft.Compute/virtualMachines",
+		"name": "[parameters('vmName')]",
+		"location": "[parameters('location')]",
+		"dependsOn": [
+			"[resourceId('Microsoft.Storage/storageAccounts',parameters('storageAccount'))]",
+			"[resourceId('Microsoft.Network/networkInterfaces',parameters('nicName'))]"
+		],
+		"properties": {
+			"hardwareProfile": {
+				"vmSize": "[parameters('vmSize')]"
+			},
+			"osProfile": {
+				"computerName": "[parameters('vmName')]",
+				"adminUsername": "[parameters('adminUsername')]",
+				"adminPassword": "[parameters('adminPassword')]"
+			},
+			"storageProfile": {
+				"imageReference": {
+					"publisher": "[parameters('windowsImagePublisher')]",
+					"offer": "[parameters('windowsImageOffer')]",
+					"sku": "[parameters('windowsImageSKU')]",
+					"version": "[parameters('windowsImageVersion')]"
+				},
+				"osDisk": {
+					"name": "osdisk",
+					"vhd": {
+						"uri": "[concat('http://',parameters('storageAccount'),'.blob.core.windows.net/',variables('vmContainerName'),'/',parameters('vmName'),'-osdisk.vhd')]"
+					},
+					"caching": "ReadWrite",
+					"createOption": "FromImage"
+				},
+				"dataDisks": [
+					{
+						"vhd": {
+							"uri":"[concat('http://',parameters('storageAccount'),'.blob.core.windows.net/',variables('vmContainerName'),'/', parameters('vmName'),'data-1.vhd')]"
+						},
+						"name":"[concat(parameters('vmName'),'data-1.vhd')]",
+						"caching" : "None",
+						"createOption": "empty",
+						"diskSizeGB": "[parameters('sqlDiskSize')]",
+						"lun": 0
+					},
+					{
+						"vhd": {
+							"uri":"[concat('http://',parameters('storageAccount'),'.blob.core.windows.net/',variables('vmContainerName'),'/', parameters('vmName'),'log-1.vhd')]"
+						},
+						"name":"[concat(parameters('vmName'),'log-1.vhd')]",
+						"caching" : "None",
+						"createOption": "empty",
+						"diskSizeGB": "[parameters('sqlDiskSize')]",
+						"lun": 1
+					}
+				]
+			},
+			"networkProfile": {
+				"networkInterfaces": [
+					{
+						"id": "[resourceId('Microsoft.Network/networkInterfaces',parameters('nicName'))]"
+					}
+				]
+			}
+		}
+	}
+	
+  ],
+  
+    "outputs": {
+    }
+	
+}
