@@ -325,7 +325,7 @@
                 "contentVersion": "1.0.0.0"
         },
         "parameters": {
-			"clusterName": { "value": "[parameters('clusterName']" },
+			"clusterName": { "value": "[parameters('clusterName')]" },
             "domainName": { "value": "[parameters('domainName')]" },
             "vmName": { "value": "[variables('sqlCVMName')]" },
             "lbName": { "value": "[variables('lbName')]" },
