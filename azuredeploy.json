@@ -309,8 +309,8 @@
 
         }
       }
-    }
-
+	},
+    
     {
         "name": "[variables('deploySqlAlwaysOn')]",
         "type": "Microsoft.Resources/deployments",
