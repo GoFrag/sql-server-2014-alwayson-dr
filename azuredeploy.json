@@ -212,11 +212,11 @@
 	
 	"sqlClusterVmNamePrefix": "[concat(parameters('vmNamePrefix'),'-SqlC-')]",
     "sqlCVMName": "[concat(variables('sqlClusterVmNamePrefix'),'0')]",
-	"sqlNicName": "[concat(variables('sqlCVMName1'),'-nic0')]",
+	"sqlNicName": "[concat(variables('sqlCVMName'),'-nic0')]",
 
     "nicTemplateURL": "[concat(parameters('assetLocation'),'/nic.json')]",
-    "updateSQLCNic": "updateSQLCNic1",
-    "updateSQLCNicId": "[concat('Microsoft.Resources/deployments/', variables('updateSQLCNic1'))]",
+    "updateSQLCNic": "updateSQLCNic",
+    "updateSQLCNicId": "[concat('Microsoft.Resources/deployments/', variables('updateSQLCNic'))]",
 
 
     "lbName": "[concat(parameters('vmNamePrefix'),'-lb')]",
