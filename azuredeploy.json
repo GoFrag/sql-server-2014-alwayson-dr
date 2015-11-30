@@ -335,7 +335,7 @@
             "sqlServerServiceAccountPassword": { "value": "[parameters('sqlServerServiceAccountPassword')]" },
             "adminUsername": { "value": "[parameters('adminUsername')]" },
             "adminPassword": { "value": "[parameters('adminPassword')]" },
-			"location": {"value": "[parameters('location')]" }
+			"location": {"value": "[parameters('location')]" },
             "assetLocation": { "value": "[parameters('assetLocation')]" },
             "sqlAlwaysOnEndpointName": { "value": "[variables('sqlAOEPName')]" },
             "sqlAlwaysOnAvailabilityGroupName": { "value": "[parameters('SqlAlwaysOnAvailabilityGroupName')]" },
