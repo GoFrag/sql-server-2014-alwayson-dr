@@ -327,7 +327,7 @@
         "parameters": {
 			"clusterName": { "value": "[parameters('clusterName']" },
             "domainName": { "value": "[parameters('domainName')]" },
-            "vmName": { "value": "[parameters('sqlCVMName')]" },
+            "vmName": { "value": "[variables('sqlCVMName')]" },
             "lbName": { "value": "[variables('lbName')]" },
             "lbIPAddress": { "value": "[parameters('lbIPAddress')]" },
             "dnsServerName": { "value": "[parameters('adDCVMName')]" },
