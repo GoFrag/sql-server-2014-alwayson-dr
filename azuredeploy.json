@@ -259,7 +259,7 @@
 		  "lbName": { "value": "[variables('lbName')]" },
 		  "lbFE" : { "value": "[variables('lbFE')]" },
 		  "lbBE" : { "value": "[variables('lbBE')]" },
-		  "sqlAOListenerName": { "value": "[variables('sqlAOListenerName')]" },
+		  "sqlAlwaysOnListenerName": { "value": "[parameters('SqlAlwaysOnListenerName')]" },
           "vmSize": { "value": "[parameters('sqlVMSize')]" }
         }
       }
