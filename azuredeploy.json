@@ -138,6 +138,22 @@
       },
       "defaultValue": "xxxsql-fc"
     },
+	
+    "SqlAlwaysOnAvailabilityGroupName": {
+      "type": "string",
+      "metadata": {
+        "description": "Existing Availability Group Name in SQL Server AlwaysOn AG cluster"
+      },
+      "defaultValue": "xxxsql-ag"
+    },
+	
+	"SqlAlwaysOnListenerName": {
+      "type": "string",
+      "metadata": {
+        "description": "Existing Availability Group Listener Name in SQL Server AlwaysOn AG cluster"
+      },
+      "defaultValue": "xxxsqlag-listener"
+    },
 
     "adminUsername": {
       "type": "string",
@@ -195,12 +211,12 @@
     "deploySqlClusterVmId": "[concat('Microsoft.Resources/deployments/', variables('deploySqlClusterVm'))]",
 	
 	"sqlClusterVmNamePrefix": "[concat(parameters('vmNamePrefix'),'-SqlC-')]",
-    "sqlCVMName1": "[concat(variables('sqlClusterVmNamePrefix'),'0')]",
-	"sqlNicName1": "[concat(variables('sqlCVMName1'),'-nic0')]",
+    "sqlCVMName": "[concat(variables('sqlClusterVmNamePrefix'),'0')]",
+	"sqlNicName": "[concat(variables('sqlCVMName1'),'-nic0')]",
 
     "nicTemplateURL": "[concat(parameters('assetLocation'),'/nic.json')]",
-    "updateSQLCNic1": "updateSQLCNic1",
-    "updateSQLCNic1Id": "[concat('Microsoft.Resources/deployments/', variables('updateSQLCNic1'))]",
+    "updateSQLCNic": "updateSQLCNic1",
+    "updateSQLCNicId": "[concat('Microsoft.Resources/deployments/', variables('updateSQLCNic1'))]",
 
 
     "lbName": "[concat(parameters('vmNamePrefix'),'-lb')]",
@@ -213,8 +229,7 @@
     "deploySqlAlwaysOn": "deploySqlAlwaysOn",
     "deploySqlAlwaysOnTemplateUrl": "[concat(parameters('assetLocation'),'/DeploySqlAlwaysOn.json')]",
 
-    "sqlAOEPName": "[concat(parameters('vmNamePrefix'),'-hadr')]",
-    "sqlAOListenerName": "[concat(parameters('vmNamePrefix'),'ag-listener')]",
+    "sqlAOEPName": "[concat(parameters('vmNamePrefix'),'-hadr')]"
 
   },
 
@@ -236,10 +251,10 @@
           "adminPassword": { "value": "[parameters('adminPassword')]" },
           "storageAccount": { "value": "[variables('sqlStorageName')]" },
           "storageAccountType": { "value": "[parameters('storageAccountType')]" },
-		  "nicName": { "value": "[variables('sqlNicName1')]" },
+		  "nicName": { "value": "[variables('sqlNicName')]" },
           "nicSubnetUri": { "value": "[variables('sqlSubnetRef')]" },
           "lbSubnetUri": { "value": "[variables('sqlSubnetRef')]" },
-          "vmName": { "value": "[variables('sqlCVMName1')]" },
+          "vmName": { "value": "[variables('sqlCVMName')]" },
           "lbIPAddress": { "value": "[parameters('lbIPAddress')]" },
 		  "lbName": { "value": "[variables('lbName')]" },
 		  "lbFE" : { "value": "[variables('lbFE')]" },
@@ -251,7 +266,7 @@
     },
 
     {
-      "name": "[variables('updateSQLCNic1')]",
+      "name": "[variables('updateSQLCNic')]",
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2015-01-01",
       "dependsOn": [
@@ -268,7 +283,7 @@
             "value": "[parameters('location')]"
           },
           "nicName": {
-            "value": "[variables('sqlNicName1')]"
+            "value": "[variables('sqlNicName')]"
           },
           "ipConfigurations": {
             "value": [
@@ -296,6 +311,39 @@
       }
     }
 
+    {
+        "name": "[variables('deploySqlAlwaysOn')]",
+        "type": "Microsoft.Resources/deployments",
+        "apiVersion": "2015-01-01",
+        "dependsOn": [
+            "[variables('updateSQLCNicId')]"
+        ],
+        "properties": {
+            "mode": "Incremental",
+            "templateLink": {
+                "uri": "[variables('deploySqlAlwaysOnTemplateUrl')]",
+                "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+			"clusterName": { "value": "[parameters('clusterName']" },
+            "domainName": { "value": "[parameters('domainName')]" },
+            "vmName": { "value": "[parameters('sqlCVMName')]" },
+            "lbName": { "value": "[variables('lbName')]" },
+            "lbIPAddress": { "value": "[parameters('lbIPAddress')]" },
+            "dnsServerName": { "value": "[parameters('adDCVMName')]" },
+            "sqlServerServiceAccountUserName": { "value": "[parameters('sqlServerServiceAccountUserName')]" },
+            "sqlServerServiceAccountPassword": { "value": "[parameters('sqlServerServiceAccountPassword')]" },
+            "adminUsername": { "value": "[parameters('adminUsername')]" },
+            "adminPassword": { "value": "[parameters('adminPassword')]" },
+			"location": {"value": "[parameters('location')]" }
+            "assetLocation": { "value": "[parameters('assetLocation')]" },
+            "sqlAlwaysOnEndpointName": { "value": "[variables('sqlAOEPName')]" },
+            "sqlAlwaysOnAvailabilityGroupName": { "value": "[parameters('SqlAlwaysOnAvailabilityGroupName')]" },
+            "sqlAlwaysOnListenerName": { "value": "[parameters('SqlAlwaysOnListenerName')]" }
+        }
+      }
+    }	
+	
   ],
 
   "outputs": {

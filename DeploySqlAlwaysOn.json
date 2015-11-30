@@ -1,0 +1,186 @@
+﻿{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "clusterName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the existing SQL Cluster"
+      }
+    },
+
+    "domainName": {
+      "type": "string",
+      "metadata": {
+        "description": "The domain name"
+      }
+    },
+    
+    "vmName": {
+      "type": "string",
+      "metadata": {
+        "description": "Node name to add to the existing SQL Cluster"
+      }
+    },
+
+    "lbName": {
+      "type": "string",
+      "metadata": {
+        "description": "the load balancer name for SQL Cluster"
+      }
+    },
+
+    "lbIPAddress": {
+      "type": "string",
+      "metadata": {
+        "description": "The VM name of Sql Witness server"
+      }
+    },
+
+    "dnsServerName": {
+      "type": "string",
+      "metadata": {
+        "description": "The Dns Server Name"
+      }
+    },
+
+    "location": {
+      "type": "string",
+      "allowedValues": [
+        "West US",
+        "East US",
+        "East US 2",
+        "Central US",
+        "South Central US",
+        "North Central US",
+        "North Europe",
+        "West Europe",
+        "East Asia",
+        "Southeast Asia",
+        "Japan East",
+        "Japan West",
+        "Southeast Asia"
+      ],
+      "metadata": {
+        "description": "The region to deploy the resources into"
+      }
+    },
+
+    "sqlServerServiceAccountUserName": {
+      "type": "string",
+      "metadata": {
+        "description": "The SQL Server Service account name"
+      },
+      "defaultValue": "sqlservice"
+    },
+
+    "sqlAlwaysOnEndpointName": {
+      "type": "string",
+      "metadata": {
+        "description": "sql AlwaysOn Endpoint Name"
+      }
+    },
+
+    "sqlAlwaysOnAvailabilityGroupName": {
+      "type": "string",
+      "metadata": {
+        "description": "sql AlwaysOn Availability Group Name"
+      }
+    },
+    
+    "sqlAlwaysOnListenerName": {
+      "type": "string",
+      "metadata": {
+        "description": "sql AlwaysOn Availability Group Listener Name"
+      }
+    },
+
+    "sqlServerServiceAccountPassword":{
+			"type": "securestring",
+			"metadata": {
+				"description": "The SQL Server Service account password"
+			}
+		},
+
+    "adminUsername": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the Administrator of the new VMs and Domain"
+      }
+    },
+
+    "adminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The password for the Administrator account of the new VMs and Domain"
+      }
+    },
+
+    "assetLocation": {
+      "type": "string",
+      "metadata": {
+        "description": "The location of resources that the script is dependent on such as linked templates and DSC modules"
+      },
+      "defaultValue": "https://raw.githubusercontent.com/robotechredmond/sql-server-2014-alwayson-dr/master"
+    }
+
+  },
+
+  "variables": {
+
+    "joinClusterModulesURL":"[concat(parameters('assetLocation'),'/JoinFailoverCluster.ps1.zip')]",
+    "joinClusterConfigurationFunction": "JoinFailoverCluster.ps1\\JoinFailoverCluster",
+
+  },
+
+  "resources": [
+
+    {
+        "type": "Microsoft.Compute/virtualMachines/extensions",
+        "name": "[concat(parameters('vmName'),'/JoinCluster')]",
+	    "apiVersion": "2015-05-01-preview",
+	    "location": "[parameters('location')]",
+	    "properties": {
+                "publisher": "Microsoft.Powershell",
+		"type": "DSC",
+		"typeHandlerVersion": "2.6",
+		    "settings": {
+                    "modulesUrl": "[variables('joinClusterModulesURL')]",
+                    "configurationFunction": "[variables('joinClusterConfigurationFunction')]",
+                    "properties": {
+                        "domainName": "[parameters('domainName')]",
+			"clusterName": "[parameters('clusterName')]",
+			"nodes": [ "[parameters('vmName')]" ],
+			"sqlAlwaysOnEndpointName": "[parameters('sqlAlwaysOnEndpointName')]",
+			"sqlAlwaysOnAvailabilityGroupName": "[parameters('sqlAlwaysOnAvailabilityGroupName')]",
+			"sqlAlwaysOnListenerName": "[parameters('sqlAlwaysOnListenerName')]",
+			"sqlAlwaysOnListenerPort": 1433,
+			"lbName": "[parameters('lbName')]",
+			"lbIPAddress": "[parameters('lbIPAddress')]",
+			"dnsServerName": "[parameters('dnsServerName')]",
+                        "adminCreds": {
+			    "userName": "[parameters('adminUserName')]",
+			    "password": "PrivateSettingsRef:adminPassword"
+			},
+			"sqlServiceCreds": {
+			    "userName": "[parameters('sqlServerServiceAccountUserName')]",
+			    "password": "PrivateSettingsRef:sqlServerServiceAccountPassword"
+			}
+		    }
+		},
+		"protectedSettings": {
+		    "items": {
+		    "adminPassword": "[parameters('adminPassword')]",
+		    "sqlServerServiceAccountPassword": "[parameters('sqlServerServiceAccountPassword')]"
+		}
+	    }
+	}
+    }
+  ],
+
+
+  "outputs": {
+
+  }
+
+}
